@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sanrakshan — Carbon Footprint Calculator</title>
+<style>
+  :root{
+    --bg1: #071A52;
+    --bg2: #0B3B2E;
+    --card: rgba(255,255,255,0.06);
+    --accent: #00F1A1;
+    --glass: rgba(255,255,255,0.06);
+    --muted: rgba(255,255,255,0.7);
+    --glass-2: rgba(255,255,255,0.03);
+    --glass-border: rgba(255,255,255,0.07);
+  }
+  *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  html,body{height:100%;margin:0;background:linear-gradient(160deg,var(--bg1),var(--bg2));color:#fff;}
+  .wrap{
+    max-width:1100px;margin:40px auto;padding:28px;border-radius:18px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border:1px solid rgba(255,255,255,0.04);
+  }
+  header{display:flex;gap:20px;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .brand{display:flex;gap:16px;align-items:center}
+  .logo{
+    width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#00F1A1,#00D4FF);
+    display:flex;align-items:center;justify-content:center;color:#042; font-weight:800; font-size:20px;box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+  }
+  h1{margin:0;font-size:22px;letter-spacing:0.2px}
+  p.lead{margin:0;color:var(--muted);font-size:14px}
+  .actions{display:flex;gap:12px;align-items:center}
+  .btn{
+    background:linear-gradient(90deg,#00F1A1,#00D4FF);color:#042;padding:10px 16px;border-radius:10px;border:none;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(3,50,38,0.25);
+  }
+  .btn.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.06);box-shadow:none;padding:9px 14px}
+  .grid{
+    display:grid;grid-template-columns:1.1fr 0.9fr;gap:18px;align-items:start;
+  }
+  .card{
+    background:var(--card);padding:18px;border-radius:12px;border:1px solid var(--glass-border);
+    box-shadow: 0 6px 18px rgba(3,12,26,0.3);
+  }
+  .card h2{margin:0 0 10px 0;font-size:16px}
+  .intro{
+    display:flex;gap:16px;align-items:center;
+  }
+  .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .stat{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:6px}
+  .stat .num{font-size:20px;font-weight:800;color:var(--accent)}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  input[type="number"], select, input[type="text"]{
+    width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);
+    background:transparent;color:#fff;font-size:14px;
+  }
+  .row{display:flex;gap:10px}
+  .row .col{flex:1}
+  .small{font-size:12px;color:var(--muted)}
+  footer{margin-top:18px;color:var(--muted);font-size:13px}
+  /* Modal popup */
+  .modal-backdrop{
+    position:fixed;inset:0;background:linear-gradient(180deg,rgba(2,6,23,0.6),rgba(2,6,23,0.85));
+    display:flex;align-items:center;justify-content:center;z-index:60;backdrop-filter: blur(6px);
+  }
+  .modal{
+    width:940px;max-width:95%;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);
+    box-shadow:0 18px 60px rgba(2,6,23,0.8);display:grid;grid-template-columns:1fr 380px;gap:12px;
+  }
+  .modal .inputs{overflow:auto;max-height:68vh;padding-right:6px}
+  .modal .sidebar{position:relative;padding-left:12px}
+  .close-x{position:absolute;right:10px;top:6px;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+  .result-big{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);text-align:center}
+  .result-big h3{margin:4px 0 0 0;font-size:16px}
+  .result-val{font-size:26px;font-weight:800;color:var(--accent)}
+  .breakdown{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+  .break-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:var(--glass-2);border:1px solid rgba(255,255,255,0.02)}
+  canvas{width:100%;height:200px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));display:block}
+  .muted-s{color:var(--muted);font-size:12px}
+  .tip{font-size:13px;padding:10px;border-radius:8px;background:linear-gradient(90deg, rgba(0,241,161,0.06), rgba(0,212,255,0.04));color:#dffdf0;border:1px solid rgba(0,241,161,0.12)}
+  .link{color:var(--accent);text-decoration:underline;cursor:pointer}
+  @media(max-width:920px){ .grid{grid-template-columns:1fr} .modal{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+  <div class="wrap" role="main">
+    <header>
+      <div class="brand">
+        <div class="logo">SRK</div>
+        <div>
+          <h1>Sanrakshan — Carbon Footprint Studio</h1>
+          <p class="lead">A compact, visual, editable carbon calculator — built for your competition.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="openCalc">Calculate Emissions</button>
+        <button class="btn ghost" id="howItWorks">How it works</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div class="intro">
+          <div style="flex:1">
+            <h2>Quick Snapshot</h2>
+            <p class="small">Enter activity data in the calculator to estimate your emissions. Defaults are editable and approximate — you can refine them in advanced settings.</p>
+          </div>
+          <div style="width:160px">
+            <div class="stat">
+              <div class="small">Annual Estimate</div>
+              <div class="num" id="mainAnnual">— kg CO₂e</div>
+            </div>
+            <div style="height:8px"></div>
+            <div class="stat">
+              <div class="small">Monthly</div>
+              <div class="num" id="mainMonthly">— kg CO₂e</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:18px">
+          <h2>Why this helps</h2>
+          <p class="small">Your team can pair this calculator with a physical project (like a pollination corridor). Use the results to set targets (e.g., reduce X kg CO₂e/year) and show impact with before/after measurements.</p>
+        </div>
+
+        <div style="margin-top:14px" class="stat-grid">
+          <div class="stat">
+            <div class="small">Electricity</div>
+            <div class="num" id="statEle">—</div>
+          </div>
+          <div class="stat">
+            <div class="small">Transport</div>
+            <div class="num" id="statTrans">—</div>
+          </div>
+          <div class="stat">
+            <div class="small">Flights</div>
+            <div class="num" id="statFlight">—</div>
+          </div>
+          <div class="stat">
+            <div class="small">Diet & Waste</div>
+            <div class="num" id="statDiet">—</div>
+          </div>
+        </div>
+
+      </div>
+
+      <aside class="card">
+        <h2>Project tip</h2>
+        <div class="tip">
+          Combine this calculator with your pollination corridor: measure insect visit frequency, reduced fossil travel (more walking/cycling), or reduced waste after workshops — convert those activities into CO₂e savings.
+        </div>
+
+        <div style="height:12px"></div>
+        <h2>Saved scenarios</h2>
+        <p class="small">You can run multiple scenarios in the popup calculator and take screenshots for your competition entry. The calculator uses editable default emission factors for transparency.</p>
+      </aside>
+    </div>
+
+    <footer>
+      <span>Built for Sanrakshan • Edit the emission factor defaults in the calculator for local accuracy.</span>
+    </footer>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal-backdrop" style="display:none" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calcTitle">
+      <div class="inputs">
+        <button class="close-x" id="closeModal" title="Close">✕</button>
+        <h2 id="calcTitle">Carbon Emission Calculator</h2>
+        <p class="small">Fill in the activity figures. Most fields accept weekly or monthly inputs — the calculator will convert to annual automatically.</p>
+
+        <!-- Electricity -->
+        <div style="margin-top:12px">
+          <h3 style="margin:6px 0 6px 0">Electricity</h3>
+          <label>Average electricity use (kWh per month)</label>
+          <input id="ele_kwh_month" type="number" min="0" step="0.1" value="200" />
+          <div class="small" style="margin-top:6px">Grid emission factor (kg CO₂e per kWh). You can edit this default in Advanced settings.</div>
+        </div>
+
+        <!-- Transport -->
+        <div style="margin-top:12px">
+          <h3 style="margin:6px 0 6px 0">Transport</h3>
+          <div class="row">
+            <div class="col">
+              <label>Car — km per week</label>
+              <input id="car_km_w" type="number" min="0" step="1" value="120" />
+            </div>
+            <div class="col">
+              <label>Car efficiency (km per liter)</label>
+              <input id="car_kmpl" type="number" min="1" step="0.1" value="15" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <div class="col">
+              <label>Public bus — km per week (per person)</label>
+              <input id="bus_km_w" type="number" min="0" step="1" value="20" />
+            </div>
+            <div class="col">
+              <label>Train/Metro — km per week (per person)</label>
+              <input id="train_km_w" type="number" min="0" step="1" value="30" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Flights -->
+        <div style="margin-top:12px">
+          <h3 style="margin:6px 0 6px 0">Flights</h3>
+          <div class="row">
+            <div class="col">
+              <label>Short flights (per year)</label>
+              <input id="fl_short" type="number" min="0" step="1" value="0" />
+            </div>
+            <div class="col">
+              <label>Long flights (per year)</label>
+              <input id="fl_long" type="number" min="0" step="1" value="0" />
+            </div>
+          </div>
+          <div class="small" style="margin-top:6px">Short and long flight defaults are editable in Advanced settings.</div>
+        </div>
+
+        <!-- Diet & Waste -->
+        <div style="margin-top:12px">
+          <h3 style="margin:6px 0 6px 0">Food & Waste</h3>
+          <div class="row">
+            <div class="col">
+              <label>Average meat meals per week (your household / per person)</label>
+              <input id="meat_meals_w" type="number" min="0" step="1" value="4" />
+            </div>
+            <div class="col">
+              <label>Household waste (kg per week)</label>
+              <input id="waste_kg_w" type="number" min="0" step="0.1" value="7" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Misc -->
+        <div style="margin-top:12px">
+          <h3 style="margin:6px 0 6px 0">Other</h3>
+          <label>Other activities (kg CO₂e per year)</label>
+          <input id="other_year" type="number" min="0" step="1" value="0" />
+          <div class="small">Use this for small activities not captured above (appliances, small business, etc.).</div>
+        </div>
+
+        <div style="height:18px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="calcBtn">Run Calculation</button>
+          <button class="btn ghost" id="resetBtn">Reset to defaults</button>
+        </div>
+        <div style="height:14px"></div>
+        <details style="color:var(--muted);border-top:1px dashed rgba(255,255,255,0.03);padding-top:10px">
+          <summary style="cursor:pointer">Advanced / Emission factor defaults (click to edit)</summary>
+          <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <label>Electricity factor (kg CO₂e per kWh)</label>
+              <input id="f_elec" type="number" step="0.01" value="0.82" />
+            </div>
+            <div>
+              <label>Petrol / fuel factor (kg CO₂e per L)</label>
+              <input id="f_fuel" type="number" step="0.01" value="2.31" />
+            </div>
+            <div>
+              <label>Bus factor (kg CO₂e per passenger-km)</label>
+              <input id="f_bus" type="number" step="0.001" value="0.089" />
+            </div>
+            <div>
+              <label>Train factor (kg CO₂e per passenger-km)</label>
+              <input id="f_train" type="number" step="0.001" value="0.041" />
+            </div>
+            <div>
+              <label>Short flight (kg CO₂e per flight)</label>
+              <input id="f_flight_short" type="number" step="1" value="150" />
+            </div>
+            <div>
+              <label>Long flight (kg CO₂e per flight)</label>
+              <input id="f_flight_long" type="number" step="1" value="1000" />
+            </div>
+            <div>
+              <label>Meat meal intensity (kg CO₂e per meal)</label>
+              <input id="f_meat_meal" type="number" step="0.01" value="2.5" />
+            </div>
+            <div>
+              <label>Waste intensity (kg CO₂e per kg)</label>
+              <input id="f_waste" type="number" step="0.01" value="0.21" />
+            </div>
+          </div>
+          <p class="small" style="margin-top:8px">These defaults are approximate and editable — adjust to local factors or cite official factors for formal reporting.</p>
+        </details>
+
+      </div>
+
+      <div class="sidebar">
+        <div class="result-big">
+          <div class="small">Annual Emissions</div>
+          <div id="annualResult" class="result-val">— kg CO₂e</div>
+          <h3>Total per month</h3>
+          <div id="monthlyResult" class="result-val" style="font-size:20px">— kg CO₂e</div>
+          <div style="height:12px"></div>
+          <div class="breakdown" id="breakdownList">
+            <!-- breakdown items injected here -->
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+        <canvas id="chartCanvas" width="380" height="240" aria-label="emissions chart"></canvas>
+
+        <div style="height:12px"></div>
+        <div class="small muted-s">Tip: Take a screenshot of the modal after running a scenario. You can adjust defaults to make the model reflect local grid and transport factors.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Utilities
+  const $ = id => document.getElementById(id);
+
+  // Open/close modal
+  const modal = $('modal');
+  const openCalc = $('openCalc');
+  const closeModal = $('closeModal');
+  const howItWorks = $('howItWorks');
+  openCalc.addEventListener('click', ()=>{ modal.style.display='flex'; modal.setAttribute('aria-hidden','false'); });
+  closeModal.addEventListener('click', ()=>{ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); });
+  howItWorks.addEventListener('click', ()=>{
+    alert('This calculator converts user-entered activity data into CO₂-equivalent emissions using editable emission factors. Run scenarios, edit factors to localize, and present results as annual, monthly, and weekly.');
+  });
+
+  // Reset to sensible defaults
+  $('resetBtn').addEventListener('click', ()=>{
+    $('ele_kwh_month').value = 200;
+    $('car_km_w').value = 120;
+    $('car_kmpl').value = 15;
+    $('bus_km_w').value = 20;
+    $('train_km_w').value = 30;
+    $('fl_short').value = 0;
+    $('fl_long').value = 0;
+    $('meat_meals_w').value = 4;
+    $('waste_kg_w').value = 7;
+    $('other_year').value = 0;
+
+    $('f_elec').value = 0.82;
+    $('f_fuel').value = 2.31;
+    $('f_bus').value = 0.089;
+    $('f_train').value = 0.041;
+    $('f_flight_short').value = 150;
+    $('f_flight_long').value = 1000;
+    $('f_meat_meal').value = 2.5;
+    $('f_waste').value = 0.21;
+    updateMainWidgets(0,0,0,0,0);
+  });
+
+  // Main calculation
+  $('calcBtn').addEventListener('click', runCalculation);
+
+  function runCalculation(){
+    // Read inputs
+    const ele_kwh_month = parseFloat($('ele_kwh_month').value) || 0;
+    const car_km_w = parseFloat($('car_km_w').value) || 0;
+    const car_kmpl = parseFloat($('car_kmpl').value) || 1;
+    const bus_km_w = parseFloat($('bus_km_w').value) || 0;
+    const train_km_w = parseFloat($('train_km_w').value) || 0;
+    const fl_short = parseInt($('fl_short').value) || 0;
+    const fl_long = parseInt($('fl_long').value) || 0;
+    const meat_meals_w = parseFloat($('meat_meals_w').value) || 0;
+    const waste_kg_w = parseFloat($('waste_kg_w').value) || 0;
+    const other_year = parseFloat($('other_year').value) || 0;
+
+    // Factors (editable)
+    const f_elec = parseFloat($('f_elec').value) || 0;
+    const f_fuel = parseFloat($('f_fuel').value) || 0;
+    const f_bus = parseFloat($('f_bus').value) || 0;
+    const f_train = parseFloat($('f_train').value) || 0;
+    const f_flight_short = parseFloat($('f_flight_short').value) || 0;
+    const f_flight_long = parseFloat($('f_flight_long').value) || 0;
+    const f_meat_meal = parseFloat($('f_meat_meal').value) || 0;
+    const f_waste = parseFloat($('f_waste').value) || 0;
+
+    // Calculations with clear units (kg CO2e)
+    // Electricity: monthly kWh -> annual kWh * factor
+    const ele_kwh_year = ele_kwh_month * 12;
+    const ele_kg = ele_kwh_year * f_elec;
+
+    // Car: km/week -> km/year -> liters = km / kmpl -> emissions = liters * fuel factor
+    const car_km_year = car_km_w * 52;
+    const car_liters_year = car_km_year / car_kmpl;
+    const car_kg = car_liters_year * f_fuel;
+
+    // Bus & Train: km/week per person -> year -> factor per km
+    const bus_km_year = bus_km_w * 52;
+    const train_km_year = train_km_w * 52;
+    const bus_kg = bus_km_year * f_bus;
+    const train_kg = train_km_year * f_train;
+
+    // Flights
+    const fl_short_kg = fl_short * f_flight_short;
+    const fl_long_kg = fl_long * f_flight_long;
+    const flight_kg = fl_short_kg + fl_long_kg;
+
+    // Diet: meat meals per week -> meals per year * factor per meal
+    const meat_meals_year = meat_meals_w * 52;
+    const diet_kg = meat_meals_year * f_meat_meal;
+
+    // Waste
+    const waste_kg_year = waste_kg_w * 52;
+    const waste_kg = waste_kg_year * f_waste;
+
+    // Aggregate
+    const transport_kg = car_kg + bus_kg + train_kg;
+    const annual_total = ele_kg + transport_kg + flight_kg + diet_kg + waste_kg + other_year;
+
+    // Derive monthly / weekly
+    const monthly_total = annual_total / 12;
+    const weekly_total = annual_total / 52;
+
+    // Update UI (rounded to 2 decimals)
+    function fmt(n){ return Number(n.toFixed(2)); }
+    $('annualResult').textContent = fmt(annual_total) + ' kg CO₂e';
+    $('monthlyResult').textContent = fmt(monthly_total) + ' kg CO₂e / month';
+
+    $('mainAnnual').textContent = fmt(annual_total) + ' kg CO₂e';
+    $('mainMonthly').textContent = fmt(monthly_total) + ' kg CO₂e';
+
+    $('statEle').textContent = fmt(ele_kg) + ' kg';
+    $('statTrans').textContent = fmt(transport_kg) + ' kg';
+    $('statFlight').textContent = fmt(flight_kg) + ' kg';
+    $('statDiet').textContent = fmt(diet_kg + waste_kg) + ' kg';
+
+    // Breakdown list
+    const breakdown = [
+      {name:'Electricity', val: ele_kg},
+      {name:'Car (fuel)', val: car_kg},
+      {name:'Bus', val: bus_kg},
+      {name:'Train/Metro', val: train_kg},
+      {name:'Flights', val: flight_kg},
+      {name:'Diet (meat meals)', val: diet_kg},
+      {name:'Waste', val: waste_kg},
+      {name:'Other', val: other_year}
+    ];
+    const breakdownDiv = $('breakdownList');
+    breakdownDiv.innerHTML = '';
+    breakdown.forEach(b=>{
+      const it = document.createElement('div');
+      it.className = 'break-item';
+      const left = document.createElement('div');
+      left.textContent = b.name;
+      left.style.fontSize = '13px';
+      const right = document.createElement('div');
+      right.textContent = fmt(b.val) + ' kg';
+      right.style.fontWeight = '700';
+      it.appendChild(left); it.appendChild(right);
+      breakdownDiv.appendChild(it);
+    });
+
+    // Draw chart
+    drawChart(breakdown.map(b=>({label:b.name, value:b.val})));
+
+    // update invisible main widgets
+    updateMainWidgets(fmt(annual_total), fmt(monthly_total), fmt(weekly_total), fmt(ele_kg), fmt(transport_kg));
+  }
+
+  function updateMainWidgets(annual, monthly, weekly, ele, trans){
+    // Already updated some main items; keep this for any additional UI updates in future
+  }
+
+  // Simple bar chart (canvas)
+  function drawChart(items){
+    const canvas = $('chartCanvas');
+    const ctx = canvas.getContext('2d');
+    // Clear
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // Prepare data: top 6 contributors
+    const data = items.slice().sort((a,b)=>b.value-a.value).slice(0,6);
+    const labels = data.map(d=>d.label);
+    const vals = data.map(d=>d.value);
+    const max = Math.max(...vals, 1);
+    // margins
+    const W = canvas.width;
+    const H = canvas.height;
+    const margin = 16;
+    const chartW = W - margin*2;
+    const chartH = H - margin*2;
+    const barH = chartH / data.length * 0.6;
+    // Draw background horizontal grid
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fillRect(0,0,W,H);
+    // Bars
+    data.forEach((d, i) => {
+      const ratio = d.value / max;
+      const x = margin;
+      const y = margin + i * (chartH / data.length) + (chartH / data.length - barH)/2;
+      const bw = Math.max(2, chartW * 0.62 * ratio);
+      // gradient
+      const grad = ctx.createLinearGradient(x, y, x+bw, y);
+      grad.addColorStop(0, 'rgba(0,241,161,0.95)');
+      grad.addColorStop(1, 'rgba(0,212,255,0.95)');
+      ctx.fillStyle = grad;
+      // rounded rect
+      roundRect(ctx, x, y, bw, barH, barH/2, true, false);
+      // label
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = '12px Inter, Arial';
+      ctx.fillText(d.label, x + bw + 12, y + barH/2 + 5);
+      // value
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.font = '12px Inter, Arial';
+      ctx.fillText(d.value.toFixed(1) + ' kg', Math.min(W - margin - 48, x + bw + 12 + 120), y + barH/2 + 5);
+    });
+
+    // bottom legend / note
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '11px Inter, Arial';
+    ctx.fillText('Top contributors (annual kg CO₂e)', margin, H - 6);
+  }
+
+  function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+    if (typeof stroke === 'undefined') {
+      stroke = true;
+    }
+    if (typeof radius === 'undefined') {
+      radius = 5;
+    }
+    if (typeof radius === 'number') {
+      radius = {tl: radius, tr: radius, br: radius, bl: radius};
+    } else {
+      const defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0};
+      for (let side in defaultRadius) {
+        radius[side] = radius[side] || defaultRadius[side];
+      }
+    }
+    ctx.beginPath();
+    ctx.moveTo(x + radius.tl, y);
+    ctx.lineTo(x + width - radius.tr, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+    ctx.lineTo(x + width, y + height - radius.br);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+    ctx.lineTo(x + radius.bl, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+    ctx.lineTo(x, y + radius.tl);
+    ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+    ctx.closePath();
+    if (fill) {
+      ctx.fill();
+    }
+    if (stroke) {
+      ctx.stroke();
+    }
+  }
+
+  // On load, initialize chart empty
+  document.addEventListener('DOMContentLoaded', ()=>{
+    drawChart([{label:'No data', value:1}]);
+  });
+
+  // Close modal on backdrop click (but not when clicking inside modal)
+  modal.addEventListener('click', (e)=>{
+    if(e.target === modal) { modal.style.display='none'; modal.setAttribute('aria-hidden','true'); }
+  });
+
+</script>
+</body>
+</html>
